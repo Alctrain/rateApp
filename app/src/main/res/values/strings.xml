@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">rateApp</string>
+    <string name="input_text">input your RMB</string>
+    <string name="showout_text">this is your money</string>
+    <string name="dollar_lable">dollar</string>
+    <string name="euro_lable">euro</string>
+    <string name="won_lable">won</string>
+</resources>
