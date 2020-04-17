@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
         rmb=(EditText) findViewById(R.id.rmb);
         show=(TextView) findViewById(R.id.show_out);
         //get the new rate from sp
-        SharedPreferences sp=getSharedPreferences("rate", Activity.MODE_PRIVATE);
+        SharedPreferences sp=getSharedPreferences("myrate", Activity.MODE_PRIVATE);
         dollarrate=sp.getFloat("dollar_rate",0.0f);
         eurorate=sp.getFloat("euro_rate",0.0f);
         wonrate=sp.getFloat("won_rate",0.0f);
@@ -70,6 +70,12 @@ public class MainActivity extends AppCompatActivity {
         dollarrate=bun.getFloat("new_dollar_key",0.1f);
         eurorate=bun.getFloat("new_euro_key",0.1f);
         wonrate=bun.getFloat("new_won_key",0.1f);
+        SharedPreferences sp=getSharedPreferences("myrate", Activity.MODE_PRIVATE);
+        SharedPreferences.Editor ed=sp.edit();
+        ed.putFloat("dollar_rate",dollarrate);
+        ed.putFloat("euro_rate",eurorate);
+        ed.putFloat("won_rate",wonrate);
+        ed.apply();
 
         super.onActivityResult(requestcode,resultcode,data);
     }
