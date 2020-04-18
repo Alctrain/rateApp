@@ -1,27 +1,28 @@
 package com.alctrain.android.rateapp;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.view.View;
 import android.widget.Toast;
-import android.util.Log;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 public class MainActivity extends AppCompatActivity implements Runnable {
 
@@ -52,9 +53,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             @Override
             public void handleMessage(Message msg){
                 if(msg.what==5){
-                    String str=(String) msg.obj;
-                    Log.i(tag,str);
-                    show.setText(str);
+                    Bundle bd1=(Bundle) msg.obj;
+                    dollarrate=bd1.getFloat("web-dollar");
+                    eurorate=bd1.getFloat("web-euro");
+                    wonrate=bd1.getFloat("web-won");
+                    Log.i(tag,dollarrate+" ");
                 }
 
                 super.handleMessage(msg);
@@ -116,14 +119,14 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 e.printStackTrace();
             }
         }
-        Message msg=handler.obtainMessage();
-        msg.what=5;
-        msg.obj="Hello from run()";
-        handler.sendMessage(msg);
+
+        Bundle bundle=new Bundle();
+
+
 
         //get data from url
-        try {
-            URL url=new URL("http://www.usd-cny.com/icbc.htm");
+        /*try {
+            URL url=new URL("http://www.usd-cny.com/bankofchina.htm");
             HttpURLConnection http=(HttpURLConnection) url.openConnection();
             InputStream in=http.getInputStream();
             String html=output(in);
@@ -132,7 +135,39 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             e.printStackTrace();
         }catch (IOException e){
             e.printStackTrace();
+        }*/
+
+        Document doc = null;
+        try {
+            doc = Jsoup.connect("http://www.usd-cny.com/bankofchina.htm").get();
+            Log.i(tag,doc.title());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        Elements tables=doc.getElementsByTag("table");
+        Element table6=tables.get(0);
+        //get data from td
+        Elements tds=table6.getElementsByTag("td");
+        for(int i=0;i<tds.size();i=i+6){
+            Element td1=tds.get(i);
+            Element zhe=tds.get(i+5);
+            Log.i(tag,td1.text()+" "+zhe.text());
+            String name=td1.text();
+            String rate=zhe.text();
+            if("美元".equals(name)){
+                bundle.putFloat("web-dollar",100f/Float.parseFloat(rate));
+            }else if("欧元".equals(name)){
+                bundle.putFloat("web-euro",100f/Float.parseFloat(rate));
+            }else if("韩元".equals(name)){
+                bundle.putFloat("web-won",100f/Float.parseFloat(rate));
+            }
+        }
+
+        Message msg=handler.obtainMessage(5);
+        msg.obj=bundle;
+        handler.sendMessage(msg);
+
+
     }
 
     private String output(InputStream inputstream) throws IOException {
