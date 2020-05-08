@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements Runnable {
 
@@ -33,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private float dollarrate=0.1f;
     private float eurorate=0.2f;
     private float wonrate=0.3f;
+    private String updateDate="";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,9 +50,34 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         dollarrate=sp.getFloat("dollar_rate",0.0f);
         eurorate=sp.getFloat("euro_rate",0.0f);
         wonrate=sp.getFloat("won_rate",0.0f);
-        //open zixiancheng
-        Thread t =new Thread(this);
-        t.start();
+        updateDate=sp.getString("updateDate","");
+
+
+        //获取当前系统时间
+        Date today=Calendar.getInstance().getTime();
+        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+        final String todayStr=sdf.format(today);
+
+
+
+
+        Log.i(tag,"openone:dollarrate="+dollarrate);
+        Log.i(tag,"openone:eurorate="+eurorate);
+        Log.i(tag,"openone:wonrate="+wonrate);
+        Log.i(tag,"openone:updateDate="+updateDate);
+        Log.i(tag,"openone:todayStr="+todayStr);
+        //判断时间
+        if(!todayStr.equals((updateDate))){
+            //open zixiancheng
+            Log.i(tag,"需要更新");
+            Thread t =new Thread(this);
+            t.start();
+        }else{
+            Log.i(tag,"不需要更新");
+        }
+
+
+
         handler=new Handler(){
             @Override
             public void handleMessage(Message msg){
@@ -57,7 +86,21 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     dollarrate=bd1.getFloat("web-dollar");
                     eurorate=bd1.getFloat("web-euro");
                     wonrate=bd1.getFloat("web-won");
-                    Log.i(tag,dollarrate+" ");
+                    Log.i(tag,"openone:dollarrate="+dollarrate);
+                    Log.i(tag,"openone:eurorate="+eurorate);
+                    Log.i(tag,"openone:wonrate="+wonrate);
+                    Log.i(tag,"openone:updateDate="+updateDate);
+
+
+                    //保存已经更新的日期
+                    SharedPreferences sp=getSharedPreferences("myrate", Activity.MODE_PRIVATE);
+                    SharedPreferences.Editor ed=sp.edit();
+                    ed.putString("updateDate",todayStr);
+                    ed.apply();
+
+
+
+                    Toast.makeText(MainActivity.this,"汇率已更新",Toast.LENGTH_SHORT).show();
                 }
 
                 super.handleMessage(msg);
@@ -94,6 +137,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         startActivityForResult(hello,1);
     }
 
+    public void open(View btn){
+        Intent list=new Intent(this,MyList2.class);
+        startActivity(list);
+    }
+
     protected void onActivityResult(int requestcode,int resultcode,Intent data){
 
         Bundle bun=data.getExtras();
@@ -105,6 +153,10 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         ed.putFloat("dollar_rate",dollarrate);
         ed.putFloat("euro_rate",eurorate);
         ed.putFloat("won_rate",wonrate);
+        Date today=Calendar.getInstance().getTime();
+        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+        final String todayStr=sdf.format(today);
+        ed.putString("updateDate",todayStr);
         ed.apply();
 
         super.onActivityResult(requestcode,resultcode,data);
@@ -120,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             }
         }
 
-        Bundle bundle=new Bundle();
+        Bundle bundle;
 
 
 
@@ -137,6 +189,54 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             e.printStackTrace();
         }*/
 
+        bundle = getFromBOC();
+        Message msg=handler.obtainMessage(5);
+        msg.obj=bundle;
+        handler.sendMessage(msg);
+
+
+    }
+
+    /**
+     * 从网页获取数据
+     * @return
+     */
+    private Bundle getFromBOC() {
+        Bundle bundle =new Bundle();
+        Document doc = null;
+        try {
+            doc = Jsoup.connect("https://www.boc.cn/sourcedb/whpj/").get();
+            Log.i(tag,doc.title());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Elements tables=doc.getElementsByTag("table");
+        Element table6=tables.get(1);
+        //get data from td
+        Elements tds=table6.getElementsByTag("td");
+        for(int i=0;i<tds.size();i=i+8){
+            Element td1=tds.get(i);
+            Element zhe=tds.get(i+5);
+            Log.i(tag,td1.text()+" "+zhe.text());
+            String name=td1.text();
+            String rate=zhe.text();
+            if("美元".equals(name)){
+                bundle.putFloat("web-dollar",100f/Float.parseFloat(rate));
+            }else if("欧元".equals(name)){
+                bundle.putFloat("web-euro",100f/Float.parseFloat(rate));
+            }else if("韩国元".equals(name)){
+                bundle.putFloat("web-won",100f/Float.parseFloat(rate));
+            }
+        }
+        return bundle;
+    }
+
+    /**
+     * 从网页获取数据
+     * @return
+     */
+    private Bundle getFromUsdCny() {
+        Bundle bundle =new Bundle();
         Document doc = null;
         try {
             doc = Jsoup.connect("http://www.usd-cny.com/bankofchina.htm").get();
@@ -162,12 +262,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 bundle.putFloat("web-won",100f/Float.parseFloat(rate));
             }
         }
-
-        Message msg=handler.obtainMessage(5);
-        msg.obj=bundle;
-        handler.sendMessage(msg);
-
-
+        return bundle;
     }
 
     private String output(InputStream inputstream) throws IOException {
@@ -184,3 +279,4 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         return out.toString();
     }
 }
+

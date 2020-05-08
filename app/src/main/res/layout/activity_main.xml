@@ -57,4 +57,11 @@
         android:layout_height="wrap_content"
         android:onClick="openone"
         android:text="@android:string/VideoView_error_button" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="open"
+        android:text="@string/fire" />
 </LinearLayout>
