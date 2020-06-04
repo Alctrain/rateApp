@@ -20,9 +20,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -174,21 +171,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
         Bundle bundle;
 
-
-
-        //get data from url
-        /*try {
-            URL url=new URL("http://www.usd-cny.com/bankofchina.htm");
-            HttpURLConnection http=(HttpURLConnection) url.openConnection();
-            InputStream in=http.getInputStream();
-            String html=output(in);
-            Log.i(tag,html);
-        }catch (MalformedURLException e){
-            e.printStackTrace();
-        }catch (IOException e){
-            e.printStackTrace();
-        }*/
-
         bundle = getFromBOC();
         Message msg=handler.obtainMessage(5);
         msg.obj=bundle;
@@ -229,54 +211,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             }
         }
         return bundle;
-    }
-
-    /**
-     * 从网页获取数据
-     * @return
-     */
-    private Bundle getFromUsdCny() {
-        Bundle bundle =new Bundle();
-        Document doc = null;
-        try {
-            doc = Jsoup.connect("http://www.usd-cny.com/bankofchina.htm").get();
-            Log.i(tag,doc.title());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Elements tables=doc.getElementsByTag("table");
-        Element table6=tables.get(0);
-        //get data from td
-        Elements tds=table6.getElementsByTag("td");
-        for(int i=0;i<tds.size();i=i+6){
-            Element td1=tds.get(i);
-            Element zhe=tds.get(i+5);
-            Log.i(tag,td1.text()+" "+zhe.text());
-            String name=td1.text();
-            String rate=zhe.text();
-            if("美元".equals(name)){
-                bundle.putFloat("web-dollar",100f/Float.parseFloat(rate));
-            }else if("欧元".equals(name)){
-                bundle.putFloat("web-euro",100f/Float.parseFloat(rate));
-            }else if("韩元".equals(name)){
-                bundle.putFloat("web-won",100f/Float.parseFloat(rate));
-            }
-        }
-        return bundle;
-    }
-
-    private String output(InputStream inputstream) throws IOException {
-        final int bufferSize = 1024;
-        final char[] buffer = new char[bufferSize];
-        final StringBuilder out = new StringBuilder();
-        Reader in = new InputStreamReader(inputstream, "gb2312");
-        for(;;){
-            int rsz=in.read(buffer,0,buffer.length);
-            if(rsz<0)
-                break;
-            out.append(buffer,0,rsz);
-        }
-        return out.toString();
     }
 }
 
